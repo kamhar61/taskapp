@@ -6,25 +6,36 @@
 //  Copyright © 2018年 Kamioka Harufumi. All rights reserved.
 //
 
+
 import UIKit
 import RealmSwift
 import UserNotifications
 
-class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate {
     
     @IBOutlet weak var tableView: UITableView!
     
+    @IBOutlet weak var searchBar: UISearchBar!
+    
     let realm = try! Realm()
     var taskArray = try! Realm().objects(Task.self).sorted(byKeyPath: "date", ascending: false)
-    
+
+  
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         tableView.delegate = self
         tableView.dataSource = self
+        searchBar.delegate = self
+        
+        //課題
+        searchBar.showsCancelButton = true
+        searchBar.placeholder = "カテゴリ検索"
+        searchBar.enablesReturnKeyAutomatically = false
+        
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -58,9 +69,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         return taskArray.count
     }
     
-    // 各セルの内容を返すメソッド
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        // 再利用可能な cell を得る
+
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
         
         let task = taskArray[indexPath.row]
@@ -75,18 +85,16 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         return cell
     }
     
-    // MARK: UITableViewDelegateプロトコルのメソッド
-    // 各セルを選択した時に実行されるメソッド
+    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         performSegue(withIdentifier: "cellSegue", sender: nil)
     }
     
-    // セルが削除が可能なことを伝えるメソッド
     func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath)-> UITableViewCellEditingStyle {
         return .delete
     }
     
-    // Delete ボタンが押された時に呼ばれるメソッド
+
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         
         if editingStyle == .delete {
@@ -109,9 +117,28 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             }
         }
     }
+  }
+ 
+    //課題
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        self.view.endEditing(true)
+        searchBar.showsCancelButton = true
+        
+        //何も入ってない＝nilじゃない。String型が長さ０=""
+        if searchBar.text == ""{
+            taskArray = try! Realm().objects(Task.self).sorted(byKeyPath: "date", ascending: false)
+        } else {
+            taskArray = try! Realm().objects(Task.self).filter("category == %@", searchBar.text!)
+        }
+        self.tableView.reloadData()
+    }
     
-
-
-}
-
+    //課題
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+       searchBar.text = ""
+    }
+    
+    
+    
+    
 }
